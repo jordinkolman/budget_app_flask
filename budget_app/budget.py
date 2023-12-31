@@ -6,10 +6,17 @@ from budget_app.db import get_db
 
 bp = Blueprint('budget', __name__)
 
-@bp.route('/')
+def get_transactions(id, check_user=True):
+    transactions = (
+        get_db()
+        .execute(
+            'SELECT t.id, date_occurred, time_occurred, v.name, c,name, t.'
+        )
+    )
+
+@bp.route('/', methods=("GET", "POST"))
 @login_required
 def index():
-    print(g)
     db = get_db()
     accounts = (db.execute(
         'SELECT id, name, balance, account_type FROM account WHERE user_id = ?',

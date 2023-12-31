@@ -28,6 +28,33 @@
         </table>
         <a href="./add_account">Add Account</a>
     </div>
+    <div id="add_transaction">
+        <h3>Add Transaction</h3>
+        <form method="post">
+            <label for="date">Date (MM/DD/YYYY)</label>
+            <input name="date" id="date" value="{{ request.form['date'] }}" required>
+            <label for="time">Time (HH:MM)</label>
+            <input name="time" id="time" value="{{ request.form['time'] }}" required>
+            <label for="vendor">Merchant</label>
+            <input name="vendor" id="vendor" value="{{ request.form['vendor'] }}" required>
+            <label for="category">Category</label>
+            <input name="category" id="category" value="{{ request.form['category ']}}" required>
+            <label for="transaction_type">Type</label>
+            <select name="transaction_type" id="transaction_type" required>
+                <option value="{{ request.form[transaction_type] }}" SELECTED>Expense</option>
+                <option value="{{ request.form[transaction_type] }}">Income</option>
+            </select>
+            <label for="amount">Amount</label>
+            <input name="amount" id="amount" value="{{ request.form['amount'] }}" required>
+            <label for="accounts">Select Account</label>
+            <select name="accounts" id="accounts" required>
+                {% for account in accounts %}
+                    <option value="{{ account['name'] }}">{{ account['name'] }}</option>
+                {% endfor %}
+            </select>
+            <input type="submit" value="Save">
+        </form>
+    </div>
     <div id="transactions">
         <h3>Transactions</h3>
         <table>
@@ -60,4 +87,5 @@
             </tbody>
         </table>
     </div>
+
 {% endblock %}
