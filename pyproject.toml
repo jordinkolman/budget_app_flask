@@ -1,0 +1,19 @@
+[project]
+name = "budget_app"
+version = "0.1.0"
+description = "A budgeting app for tracking transactions and accounts for different users"
+dependencies = [
+    "flask",
+    "pytest",
+]
+
+[build-system]
+requires = ["flit_core<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["budget_app"]
