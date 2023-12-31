@@ -32,7 +32,9 @@ CREATE TABLE transactions (
 CREATE TABLE account (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
     balance REAL NOT NULL,
+    account_type TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user (id)
 );
 

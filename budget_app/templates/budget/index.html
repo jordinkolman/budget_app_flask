@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Budget Summary{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <div id="accounts">
+        <h3>Accounts</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th><span>Account Name</span></th>
+                    <th><span>Balance</span></th>
+                    <th><span>Account Type</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in accounts %}
+                    <tr>
+                        <td><span>{{ account['name'] }}</span></td>
+                        <td><span>{{ account['balance'] }}</span></td>
+                        <td><span>{{ account['account_type'] }}</span></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="./add_account">Add Account</a>
+    </div>
+    <div id="transactions">
+        <h3>Transactions</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th><span>Date</span></th>
+                    <th><span>Time</span></th>
+                    <th><span>Vendor</span></th>
+                    <th><span>Category</span></th>
+                    <th><span>Type</span></th>
+                    <th><span>Time</span></th>
+                    <th><span>Amount</span></th>
+                    <th><span>Account</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                    <tr>
+                        <td><span>{{ transaction['date'] }}</span></td>
+                        <td><span>{{ transaction['time'] }}</span></td>
+                        <td><span>{{ transaction['vendor'] }}</span></td>
+                        <td><span>{{ transaction['category'] }}</span></td>
+                        <td><span>{{ transaction['type'] }}</span></td>
+                        <td><span>{{ transaction['time'] }}</span></td>
+                        <td><span>{{ transaction['amount'] }}</span></td>
+                        <td><span>{{ transaction['account'] }}</span></td>
+                        <a href="{{ url_for('update_transaction.html', id=transaction['id']) }}">Edit</a>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

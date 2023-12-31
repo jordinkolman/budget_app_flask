@@ -7,9 +7,9 @@ INSERT INTO transactions (user_id, date_occurred, time_occurred, vendor_id, cate
 VALUES
     (1, date(datetime('now')), time(datetime('now')), 1, 1, 1, 1.0, 1, 'none')
 
-INSERT INTO account (user_id, balance)
+INSERT INTO account (user_id, balance, account_type, name)
 VALUES
-    (1, 10000.00)
+    (1, 10000.00, 'checking', 'Chime')
 
 INSERT INTO categories (name) VALUES (test_category)
 
