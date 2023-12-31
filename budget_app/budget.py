@@ -6,18 +6,75 @@ from budget_app.db import get_db
 
 bp = Blueprint('budget', __name__)
 
-def get_transactions(id, check_user=True):
-    transactions = (
-        get_db()
-        .execute(
-            'SELECT t.id, date_occurred, time_occurred, v.name, c,name, t.'
-        )
-    )
+def get_id(title, table):
+    db = get_db()
+    table_vals = []
+
+    if table in ['vendors', 'categories']:
+        query = f'SELECT name FROM {table}'
+        table_vals = db.execute(query).fetchall()
+    else:
+        raise ValueError
+
+    if title not in table_vals:
+        query = f"INSERT INTO {table} (name) VALUES ('{title}')"
+        db.execute(query)
+        db.commit()
+
+    query = f'SELECT id FROM {table} WHERE name = {title}'
+    return db.execute(query).fetchone()
+
 
 @bp.route('/', methods=("GET", "POST"))
 @login_required
 def index():
     db = get_db()
+    if request.method == "POST":
+        date = request.form['date']
+        time = request.form['time']
+        vendor = request.form['vendor']
+        category = request.form['category']
+        transaction_type = request.form['transaction_type']
+        amount = request.form['amount']
+        account = request.form['account']
+        error = None
+
+        if not date:
+            error = 'Date is Required'
+        elif not time:
+            error = 'Time is Required'
+        elif not vendor:
+            error = 'Vendor is Required'
+        elif not category:
+            error = 'Category is Required'
+        elif not amount:
+            amount = 0.0
+
+        accounts = db.execute('SELECT * FROM account WHERE user_id = ? ORDER BY name', (g.user['id'],)).fetchall()
+        account_id = None
+        for acc in accounts:
+            if acc['name'] == account:
+                account_id = acc['id']
+
+        if account_id is None:
+            error = "Invalid Account. Please Enter a Valid Account or Add a New One."
+
+        if error is not None:
+            flash(error)
+        else:
+            category_id = get_id(title=category, table='categories')
+            vendor_id = get_id(title=vendor, table='vendors')
+            type_id = 1 if transaction_type == 'Income' else 2
+
+            db.execute(
+                'INSERT INTO transactions (user_id, date_occurred, time_occurred, vendor_id, category_id, type_id, amount, account_id)'
+                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                (g.user['id'], date, time, vendor_id, category_id, type_id, amount, account_id,)
+            )
+            db.commit()
+            return redirect(url_for('budget.index'))
+
+
     accounts = (db.execute(
         'SELECT id, name, balance, account_type FROM account WHERE user_id = ?',
         (g.user["id"],)
