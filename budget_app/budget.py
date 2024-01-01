@@ -11,7 +11,7 @@ def get_id(title, table):
     db = get_db()
     table_vals = []
 
-    if table in ["vendors", "categories"]:
+    if table in ["vendors", "categories", "types"]:
         query = f"SELECT name FROM {table}"
         table_rows = db.execute(query).fetchall()
         for row in table_rows:
@@ -27,6 +27,46 @@ def get_id(title, table):
 
     query = f'SELECT id FROM {table} WHERE (name="{title}")'
     return db.execute(query).fetchone()[0]
+
+
+
+def get_account(id, check_user=True):
+    account = (
+        get_db()
+        .execute(
+            "SELECT a.id, name, balance, account_type, user_id, username"
+            " FROM account a JOIN user u ON a.user_id = u.id"
+            " WHERE a.id = ?",
+            (id,),
+        )
+        .fetchone()
+    )
+
+    if account is None:
+        abort(404, f"Account ID {id} doesn't exist")
+
+    if check_user and account["user_id"] != g.user["id"]:
+        abort(403)
+
+    return account
+
+
+def update_balance(account_id, amount, transaction_type):
+    account = get_account(account_id)
+    if account is None:
+        abort(404, f"Account ID {account_id} does not exist")
+    account_balance = float(account['balance'])
+    if transaction_type == 'Income':
+        account_balance += amount
+    else:
+        account_balance -= amount
+    db = get_db()
+    db.execute(
+        'UPDATE account SET balance = ? WHERE id = ?', (account_balance, account_id)
+    )
+    db.commit()
+
+    return
 
 
 @bp.route("/", methods=("GET", "POST"))
@@ -71,7 +111,7 @@ def index():
         else:
             category_id = get_id(title=category, table="categories")
             vendor_id = get_id(title=vendor, table="vendors")
-            type_id = 1 if transaction_type == "Income" else 2
+            type_id = db.execute("SELECT id FROM types WHERE name = ?",(transaction_type,)).fetchone()[0]
 
             db.execute(
                 "INSERT INTO transactions (user_id, date_occurred, time_occurred, vendor_id, category_id, type_id, amount, account_id)"
@@ -88,6 +128,7 @@ def index():
                 ),
             )
             db.commit()
+            update_balance(account_id, float(amount), transaction_type)
             return redirect(url_for("budget.index"))
 
     accounts = db.execute(
@@ -105,8 +146,12 @@ def index():
         (g.user["id"],),
     ).fetchall()
 
+    types = db.execute(
+        'SELECT id, name FROM types'
+    ).fetchall()
+
     return render_template(
-        "budget/index.html", accounts=accounts, transactions=transactions,
+        "budget/index.html", accounts=accounts, transactions=transactions, types=types,
     )
 
 
@@ -115,30 +160,15 @@ def index():
 @login_required
 def delete_transaction(id):
     db = get_db()
+    account_id, amount, transaction_type = db.execute('SELECT account_id, amount, ty.name FROM transactions t JOIN types ty ON t.type_id = ty.id WHERE t.id = ?', (id,)).fetchone()
+    if transaction_type == 'Expense':
+        transaction_type = 'Income'
+    else:
+        transaction_type = 'Expense'
+    update_balance(account_id, amount, transaction_type)
     db.execute("DELETE FROM transactions WHERE id = ?", (id,))
     db.commit()
     return redirect(url_for("budget.index"))
-
-
-def get_account(id, check_user=True):
-    account = (
-        get_db()
-        .execute(
-            "SELECT a.id, name, balance, account_type, user_id, username"
-            " FROM account a JOIN user u ON a.user_id = u.id"
-            " WHERE a.id = ?",
-            (id,),
-        )
-        .fetchone()
-    )
-
-    if account is None:
-        abort(404, f"Account ID {id} doesn't exist")
-
-    if check_user and account["user_id"] != g.user["id"]:
-        abort(403)
-
-    return account
 
 
 @bp.route("/add_account", methods=("GET", "POST"))

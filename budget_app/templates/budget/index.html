@@ -41,8 +41,9 @@
             <input name="category" id="category" value="{{ request.form['category'] }}" required>
             <label for="transaction_type">Type</label>
             <select name="transaction_type" id="transaction_type">
-                <option value="{{ request.form[transaction_type] }}" SELECTED>Expense</option>
-                <option value="{{ request.form[transaction_type] }}">Income</option>
+                {% for type in types %}
+                    <option value="{{ type.name }}">{{ type['name'] }}</option>
+                {% endfor %}
             </select>
             <label for="amount">Amount</label>
             <input name="amount" id="amount" value="{{ request.form['amount'] }}" required>
@@ -76,7 +77,7 @@
                         <td><span>{{ transaction['time_occurred'] }}</span></td>
                         <td><span>{{ transaction['v_name'] }}</span></td>
                         <td><span>{{ transaction['c_name'] }}</span></td>
-                        <td><span>{{ transaction['t_name'] }}</span></td>
+                        <td><span>{{ transaction['ty_name'] }}</span></td>
                         <td><span>{{ transaction['amount'] }}</span></td>
                         <td><span>{{ transaction['a_name'] }}</span></td>
                         <td><form action="{{ url_for('budget.delete_transaction', id=transaction['id']) }}" method="post">
