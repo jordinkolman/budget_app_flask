@@ -79,6 +79,9 @@
                         <td><span>{{ transaction['t_name'] }}</span></td>
                         <td><span>{{ transaction['amount'] }}</span></td>
                         <td><span>{{ transaction['a_name'] }}</span></td>
+                        <td><form action="{{ url_for('budget.delete_transaction', id=transaction['id']) }}" method="post">
+                            <input class="danger" type="submit" value="Delete" onclick="return confirm('Are you sure?');">
+                        </form></td>
                 {% endfor %}
             </tbody>
         </table>
