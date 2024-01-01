@@ -65,7 +65,6 @@
                     <th><span>Vendor</span></th>
                     <th><span>Category</span></th>
                     <th><span>Type</span></th>
-                    <th><span>Time</span></th>
                     <th><span>Amount</span></th>
                     <th><span>Account</span></th>
                 </tr>
@@ -73,16 +72,13 @@
             <tbody>
                 {% for transaction in transactions %}
                     <tr>
-                        <td><span>{{ transaction['date'] }}</span></td>
-                        <td><span>{{ transaction['time'] }}</span></td>
-                        <td><span>{{ transaction['vendor'] }}</span></td>
-                        <td><span>{{ transaction['category'] }}</span></td>
-                        <td><span>{{ transaction['type'] }}</span></td>
-                        <td><span>{{ transaction['time'] }}</span></td>
+                        <td><span>{{ transaction['date_occurred'] }}</span></td>
+                        <td><span>{{ transaction['time_occurred'] }}</span></td>
+                        <td><span>{{ transaction['v_name'] }}</span></td>
+                        <td><span>{{ transaction['c_name'] }}</span></td>
+                        <td><span>{{ transaction['t_name'] }}</span></td>
                         <td><span>{{ transaction['amount'] }}</span></td>
-                        <td><span>{{ transaction['account'] }}</span></td>
-                        <a href="{{ url_for('update_transaction.html', id=transaction['id']) }}">Edit</a>
-                    </tr>
+                        <td><span>{{ transaction['a_name'] }}</span></td>
                 {% endfor %}
             </tbody>
         </table>

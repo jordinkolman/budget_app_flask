@@ -12,7 +12,10 @@ def get_id(title, table):
 
     if table in ['vendors', 'categories']:
         query = f'SELECT name FROM {table}'
-        table_vals = db.execute(query).fetchall()
+        table_rows = db.execute(query).fetchall()
+        for row in table_rows:
+            table_vals.append(row[0])
+        print(table_vals)
     else:
         raise ValueError
 
@@ -21,8 +24,8 @@ def get_id(title, table):
         db.execute(query)
         db.commit()
 
-    query = f'SELECT id FROM {table} WHERE name = {title}'
-    return db.execute(query).fetchone()
+    query = f'SELECT id FROM {table} WHERE (name="{title}")'
+    return db.execute(query).fetchone()[0]
 
 
 @bp.route('/', methods=("GET", "POST"))
@@ -51,9 +54,10 @@ def index():
             amount = 0.0
 
         accounts = db.execute('SELECT * FROM account WHERE user_id = ? ORDER BY name', (g.user['id'],)).fetchall()
+        print(accounts)
         account_id = None
         for acc in accounts:
-            if acc['name'] == account:
+            if acc[2] == account:
                 account_id = acc['id']
 
         if account_id is None:
@@ -80,8 +84,9 @@ def index():
         (g.user["id"],)
     ).fetchall())
 
+
     transactions = (db.execute(
-        'SELECT date_occurred, time_occurred, v.name, c.name, ty.name, amount, a.name'
+        'SELECT date_occurred, time_occurred, v.name v_name, c.name c_name, ty.name ty_name, amount, a.name a_name'
         ' FROM transactions t JOIN vendors v ON t.vendor_id = v.id'
         '  JOIN categories c ON t.category_id = c.id'
         '  JOIN types ty ON t.type_id = ty.id'
