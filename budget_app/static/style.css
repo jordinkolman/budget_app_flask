@@ -28,3 +28,7 @@ header .action {
     display: block;
     padding: 0.5rem;
 }
+
+.flash {
+    color: red;
+}

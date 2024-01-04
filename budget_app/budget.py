@@ -4,6 +4,8 @@ from werkzeug.exceptions import abort
 from budget_app.auth import login_required
 from budget_app.db import get_db
 
+import re
+
 bp = Blueprint("budget", __name__)
 
 
@@ -85,14 +87,20 @@ def index():
 
         if not date:
             error = "Date is Required"
+        # I want the time field for when I add account linking for automatic updates, but I don't expect to actually track all my transaction times
+        # So rather than make it required I just set a default time
         elif not time:
-            error = "Time is Required"
+            time = '12:00'
         elif not vendor:
             error = "Vendor is Required"
         elif not category:
             error = "Category is Required"
         elif not amount:
             amount = 0.0
+
+        if not re.fullmatch(r"(3[01]|[12][0-9]|0[1-9])/(1[0-2]|0[1-9])/[0-9]{4}", date):
+            error = "Date must be in format MM/DD/YYYY, including leading zeroes"
+
 
         accounts = db.execute(
             "SELECT * FROM account WHERE user_id = ? ORDER BY name", (g.user["id"],)
@@ -111,6 +119,8 @@ def index():
         else:
             category_id = get_id(title=category, table="categories")
             vendor_id = get_id(title=vendor, table="vendors")
+            # Because get_id() inserts a new entry if the queried entry doesn't exist, I don't want to use it for type_id, which I only want to be Income or Expense
+            # So we just return the first element of the row returned by the fetchone query
             type_id = db.execute("SELECT id FROM types WHERE name = ?",(transaction_type,)).fetchone()[0]
 
             db.execute(
