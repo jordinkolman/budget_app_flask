@@ -19,7 +19,7 @@
                 {% for account in accounts %}
                     <tr>
                         <td><span>{{ account['name'] }}</span></td>
-                        <td><span>{{ account['balance'] }}</span></td>
+                        <td><span>${{ account['balance'] }}</span></td>
                         <td><span>{{ account['ty_name'] }}</span></td>
                         <td><a href='{{ account["id"] }}/update_account'>Update</a></td>
                     </tr>
@@ -78,7 +78,7 @@
                         <td><span>{{ transaction['v_name'] }}</span></td>
                         <td><span>{{ transaction['c_name'] }}</span></td>
                         <td><span>{{ transaction['ty_name'] }}</span></td>
-                        <td><span>{{ transaction['amount'] }}</span></td>
+                        <td><span>${{ transaction['amount'] }}</span></td>
                         <td><span>{{ transaction['a_name'] }}</span></td>
                         <td><form action="{{ url_for('budget.delete_transaction', id=transaction['id']) }}" method="post">
                             <input class="danger" type="submit" value="Delete" onclick="return confirm('Are you sure?');">

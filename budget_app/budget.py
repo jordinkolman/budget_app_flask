@@ -1,10 +1,10 @@
+from datetime import datetime
+
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 from werkzeug.exceptions import abort
 
 from budget_app.auth import login_required
 from budget_app.db import get_db
-
-import re
 
 bp = Blueprint("budget", __name__)
 
@@ -82,7 +82,7 @@ def index():
         vendor = request.form["vendor"]
         category = request.form["category"]
         transaction_type = request.form["transaction_type"]
-        amount = request.form["amount"]
+        amount = f'{float(request.form["amount"]):0.2f}'
         account = request.form["account"]
         error = None
 
@@ -98,9 +98,14 @@ def index():
             error = "Category is Required"
         elif not amount:
             amount = 0.0
-
-        if not re.fullmatch(r"(3[01]|[12][0-9]|0[1-9])/(1[0-2]|0[1-9])/[0-9]{4}", date):
-            error = "Date must be in format MM/DD/YYYY, including leading zeroes"
+        try:
+            date = datetime.strptime(date, "%m/%d/%Y")
+            if date > datetime.now():
+                error = "Date cannot be in the future"
+        except ValueError:
+            error = "Invalid Date"
+        except AttributeError:
+            pass
 
 
         accounts = db.execute(
@@ -129,7 +134,7 @@ def index():
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     g.user["id"],
-                    date,
+                    date.strftime('%m/%d/%Y'),
                     time,
                     vendor_id,
                     category_id,
@@ -187,10 +192,11 @@ def delete_transaction(id):
 @bp.route("/add_account", methods=("GET", "POST"))
 @login_required
 def add_account():
+    db = get_db()
+
     if request.method == "POST":
-        db = get_db()
         name = request.form["name"]
-        balance = request.form["balance"]
+        balance = f'{float(request.form["balance"]):,.2f}'
         account_type = request.form["account_type"]
         type_id = db.execute('SELECT id FROM account_types WHERE name = ?', (account_type,)).fetchone()[0]
         error = None
@@ -218,17 +224,20 @@ def add_account():
             db.commit()
             return redirect(url_for("budget.index"))
 
-    return render_template("budget/add_account.html")
+    types = db.execute('SELECT id, name FROM account_types')
+
+    return render_template("budget/add_account.html", types=types)
 
 
 @bp.route("/<int:id>/update_account", methods=("GET", "POST"))
 @login_required
 def update_account(id):
     account = get_account(id)
+    db = get_db()
 
     if request.method == "POST":
         name = request.form["name"]
-        balance = request.form["balance"]
+        balance = f'{float(request.form["balance"]):,.2f}'
         account_type = request.form["account_type"]
         type_id = db.execute('SELECT id FROM account_types WHERE name = ?', (account_type,)).fetchone()[0]
         error = None
@@ -244,7 +253,6 @@ def update_account(id):
         if error is not None:
             flash(error)
         else:
-            db = get_db()
             db.execute(
                 "UPDATE accounts SET name = ?, balance = ?, type_id = ? WHERE id = ?",
                 (name, balance, type_id, id),
@@ -252,7 +260,9 @@ def update_account(id):
             db.commit()
             return redirect(url_for("budget.index"))
 
-    return render_template("budget/update_account.html", account=account)
+    types = db.execute('SELECT id, name FROM account_types')
+
+    return render_template("budget/update_account.html", account=account, types=types)
 
 
 @bp.route("/<int:id>/delete_account", methods=("POST",))

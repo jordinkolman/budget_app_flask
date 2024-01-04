@@ -11,7 +11,11 @@
         <label for="balance">Current Balance</label>
         <input name="balance" id="account_balance" value="{{ request.form['balance'] or account['balance']}}">
         <label for="account_type">Account Type</label>
-        <input name="account_type" id="account_type" value="{{ request.form['account_type'] or account['account_type'] }}" required>
+        <select name="account_type" id="account_type">
+            {% for type in types %}
+                <option value="{{ type.name }}">{{ type['name'] }}</option>
+            {% endfor %}
+        </select>
         <input type="submit" value="Save">
     </form>
     <hr>
