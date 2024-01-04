@@ -1,12 +1,12 @@
-DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS transactions;
-DROP TABLE IF EXISTS account;
+DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS transaction_types;
 DROP TABLE IF EXISTS account_types;
 DROP TABLE IF EXISTS vendors;
 
-CREATE TABLE user (
+CREATE TABLE users (
     id INTEGER PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL
@@ -23,20 +23,21 @@ CREATE TABLE transactions (
     amount REAL NOT NULL,
     account_id INTEGER NOT NULL,
     notes TEXT,
-    FOREIGN KEY (user_id) REFERENCES user (id),
-    FOREIGN KEY (vendor_id) REFERENCES vendor (id),
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (vendor_id) REFERENCES vendors (id),
     FOREIGN KEY (category_id) REFERENCES categories (id),
     FOREIGN KEY (type_id) REFERENCES transaction_types (id),
-    FOREIGN KEY (account_id) REFERENCES account (id)
+    FOREIGN KEY (account_id) REFERENCES accounts (id)
 );
 
-CREATE TABLE account (
+CREATE TABLE accounts (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     name TEXT UNIQUE NOT NULL,
     balance REAL NOT NULL,
-    account_type TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES user (id)
+    type_id TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (type_id) REFERENCES account_types (id)
 );
 
 CREATE TABLE categories (
@@ -52,7 +53,7 @@ CREATE TABLE transaction_types (
 CREATE TABLE account_types (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL
-)
+);
 
 CREATE TABLE vendors (
     id INTEGER PRIMARY KEY,

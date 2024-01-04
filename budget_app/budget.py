@@ -13,7 +13,7 @@ def get_id(title, table):
     db = get_db()
     table_vals = []
 
-    if table in ["vendors", "categories", "types"]:
+    if table in ["vendors", "categories"]:
         query = f"SELECT name FROM {table}"
         table_rows = db.execute(query).fetchall()
         for row in table_rows:
@@ -36,8 +36,9 @@ def get_account(id, check_user=True):
     account = (
         get_db()
         .execute(
-            "SELECT a.id, name, balance, account_type, user_id, username"
-            " FROM account a JOIN user u ON a.user_id = u.id"
+            "SELECT a.id, a.name, balance, ty.name, user_id, username"
+            " FROM accounts a JOIN user u ON a.user_id = u.id"
+            " JOIN account_types ty ON a.type_id = ty.id"
             " WHERE a.id = ?",
             (id,),
         )
@@ -64,7 +65,7 @@ def update_balance(account_id, amount, transaction_type):
         account_balance -= amount
     db = get_db()
     db.execute(
-        'UPDATE account SET balance = ? WHERE id = ?', (account_balance, account_id)
+        'UPDATE accounts SET balance = ? WHERE id = ?', (account_balance, account_id)
     )
     db.commit()
 
@@ -103,7 +104,7 @@ def index():
 
 
         accounts = db.execute(
-            "SELECT * FROM account WHERE user_id = ? ORDER BY name", (g.user["id"],)
+            "SELECT * FROM accounts WHERE user_id = ? ORDER BY name", (g.user["id"],)
         ).fetchall()
         print(accounts)
         account_id = None
@@ -121,7 +122,7 @@ def index():
             vendor_id = get_id(title=vendor, table="vendors")
             # Because get_id() inserts a new entry if the queried entry doesn't exist, I don't want to use it for type_id, which I only want to be Income or Expense
             # So we just return the first element of the row returned by the fetchone query
-            type_id = db.execute("SELECT id FROM types WHERE name = ?",(transaction_type,)).fetchone()[0]
+            type_id = db.execute("SELECT id FROM transaction_types WHERE name = ?",(transaction_type,)).fetchone()[0]
 
             db.execute(
                 "INSERT INTO transactions (user_id, date_occurred, time_occurred, vendor_id, category_id, type_id, amount, account_id)"
@@ -142,7 +143,9 @@ def index():
             return redirect(url_for("budget.index"))
 
     accounts = db.execute(
-        "SELECT id, name, balance, account_type FROM account WHERE user_id = ?",
+        "SELECT a.id, a.name, balance, ty.name ty_name FROM accounts a"
+        " JOIN account_types ty ON a.type_id = ty.id"
+        " WHERE user_id = ?",
         (g.user["id"],),
     ).fetchall()
 
@@ -150,8 +153,8 @@ def index():
         "SELECT t.id, date_occurred, time_occurred, v.name v_name, c.name c_name, ty.name ty_name, amount, a.name a_name"
         " FROM transactions t JOIN vendors v ON t.vendor_id = v.id"
         "  JOIN categories c ON t.category_id = c.id"
-        "  JOIN types ty ON t.type_id = ty.id"
-        "  JOIN account a ON t.account_id = a.id"
+        "  JOIN transaction_types ty ON t.type_id = ty.id"
+        "  JOIN accounts a ON t.account_id = a.id"
         "  WHERE t.user_id = ?",
         (g.user["id"],),
     ).fetchall()
@@ -170,7 +173,7 @@ def index():
 @login_required
 def delete_transaction(id):
     db = get_db()
-    account_id, amount, transaction_type = db.execute('SELECT account_id, amount, ty.name FROM transactions t JOIN types ty ON t.type_id = ty.id WHERE t.id = ?', (id,)).fetchone()
+    account_id, amount, transaction_type = db.execute('SELECT account_id, amount, ty.name FROM transactions t JOIN transaction_types ty ON t.type_id = ty.id WHERE t.id = ?', (id,)).fetchone()
     if transaction_type == 'Expense':
         transaction_type = 'Income'
     else:
@@ -185,9 +188,11 @@ def delete_transaction(id):
 @login_required
 def add_account():
     if request.method == "POST":
+        db = get_db()
         name = request.form["name"]
         balance = request.form["balance"]
         account_type = request.form["account_type"]
+        type_id = db.execute('SELECT id FROM account_types WHERE name = ?', (account_type,)).fetchone()[0]
         error = None
 
         if not name:
@@ -201,14 +206,13 @@ def add_account():
         if error is not None:
             flash(error)
         else:
-            db = get_db()
             db.execute(
-                "INSERT INTO account (user_id, name, balance, account_type) VALUES (?, ?, ?, ?)",
+                "INSERT INTO accounts (user_id, name, balance, type_id) VALUES (?, ?, ?, ?)",
                 (
                     g.user["id"],
                     name,
                     balance,
-                    account_type,
+                    type_id,
                 ),
             )
             db.commit()
@@ -226,6 +230,7 @@ def update_account(id):
         name = request.form["name"]
         balance = request.form["balance"]
         account_type = request.form["account_type"]
+        type_id = db.execute('SELECT id FROM account_types WHERE name = ?', (account_type,)).fetchone()[0]
         error = None
 
         if not name:
@@ -241,8 +246,8 @@ def update_account(id):
         else:
             db = get_db()
             db.execute(
-                "UPDATE account SET name = ?, balance = ?, account_type = ? WHERE id = ?",
-                (name, balance, account_type, id),
+                "UPDATE accounts SET name = ?, balance = ?, type_id = ? WHERE id = ?",
+                (name, balance, type_id, id),
             )
             db.commit()
             return redirect(url_for("budget.index"))
@@ -255,6 +260,6 @@ def update_account(id):
 def delete_account(id):
     get_account(id)
     db = get_db()
-    db.execute("DELETE FROM account WHERE id = ?", (id,))
+    db.execute("DELETE FROM accounts WHERE id = ?", (id,))
     db.commit()
     return redirect(url_for("budget.index"))
